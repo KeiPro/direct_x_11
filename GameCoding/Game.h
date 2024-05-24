@@ -51,7 +51,7 @@ private:
 	ComPtr<IDXGISwapChain> _swapChain = nullptr;
 
 	/// RTV(Render Target View)
-	// 우리는 더블 버퍼링을 할 때, 후면 버퍼에다가 뭔가 그려달라는 요청을해야되는 것으로 사용하고 있음.
+	// 우리는 더블 버퍼링을 할 때, 후면 버퍼에다가 뭔가 그려달라는 요청을해야되는 것.
 	ComPtr<ID3D11RenderTargetView> _renderTargetView; // 후면 버퍼를 묘사하는 존재.
 
 	// Misc
