@@ -1,2 +1,4 @@
 .vs
-*sln
+*.sln
+
+/GameCoding/x64
