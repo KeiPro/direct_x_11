@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 class Game
 {
 public:
@@ -18,6 +19,17 @@ private:
 	void CreateDeviceAndSwapChain();
 	void CreateRenderTargetView();
 	void SetViewport();
+
+private:
+	// 어떻게 삼각형을 묘사할 지 데이터를 만들어주는 함수.
+	void CreateGeometry();
+	void CreateInputLayout();
+
+	void CreateVS();
+	void CreatePS();
+
+	void LoadShaderFromFile(const wstring& path, const string& name, const string& version, ComPtr<ID3DBlob>& blob);
+	
 
 private:
 	HWND _hwnd;
@@ -58,5 +70,22 @@ private:
 	D3D11_VIEWPORT _viewport = { 0 }; // 화면의 크기를 묘사
 	float _clearColor[4] = { 0.5f, 0.5f, 0.5f, 0.5f };
 
+
+private:
+	// Geometry
+	vector<Vertex> _vertices;
+	ComPtr<ID3D11Buffer> _vertexBuffer = nullptr;
+	ComPtr<ID3D11InputLayout> _inputLayout = nullptr;
+
+	// VS
+	ComPtr<ID3D11VertexShader> _vertexShader = nullptr;
+	ComPtr<ID3DBlob> _vsBlob = nullptr;
+	
+	// PS
+	ComPtr<ID3D11PixelShader> _pixelShader = nullptr;
+	ComPtr<ID3DBlob> _psBlob = nullptr;
+
+
+	// [CPU <-> RAM] [GPU <-> VRAM]
 };
 

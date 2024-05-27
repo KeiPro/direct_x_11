@@ -28,6 +28,11 @@ void Game::Init(HWND hwnd)
 	CreateDeviceAndSwapChain();
 	CreateRenderTargetView();
 	SetViewport();
+
+	CreateGeometry();
+	CreateVS();
+	CreateInputLayout();
+	CreatePS();
 }
 
 void Game::Update()
@@ -38,7 +43,28 @@ void Game::Render()
 {
 	RenderBigin();
 
-	// TODO
+	// IA - VS - RS - PS - OM
+	{
+		uint32 stride = sizeof(Vertex);
+		uint32 offset = 0;
+
+		// IA
+		_deviceContext->IASetVertexBuffers(0, 1, _vertexBuffer.GetAddressOf(), &stride, &offset);
+		_deviceContext->IASetInputLayout(_inputLayout.Get());
+		_deviceContext->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		// VS
+		_deviceContext->VSSetShader(_vertexShader.Get(), nullptr, 0);
+
+		// RS : 보간 단계
+
+		// PS 
+		_deviceContext->PSSetShader(_pixelShader.Get(), nullptr, 0);
+
+		// OM
+
+		_deviceContext->Draw(_vertices.size(), 0);
+	}
 
 	RenderEnd();
 }
@@ -124,3 +150,93 @@ void Game::SetViewport()
 	_viewport.MinDepth = 0.f;
 	_viewport.MaxDepth = 1.f;
 }
+
+void Game::CreateGeometry()
+{
+	// VertexData
+	// 동적 배열을 사용함으로 기본적으로 CPU의 RAM을 사용하게 된다.
+	{
+		_vertices.resize(3);
+
+		_vertices[0].position = Vec3(-0.5f, -0.5f, 0.f);
+		_vertices[0].color = Color(1.f, 0.f, 0.f, 1.f);
+
+		_vertices[1].position = Vec3(0, 0.5f, 0);
+		_vertices[1].color = Color(0.f, 1.f, 0.f, 1.f);
+
+		_vertices[2].position = Vec3(0.5f, -0.5f, 0);
+		_vertices[2].color = Color(0.f, 0.f, 1.f, 1.f);
+	}
+	
+	// GPU의 VRAM을 사용하기 위해서 위에서 만든 버텍스 버퍼를 GPU에게 건네주는 처리.
+	// VertexBuffer
+	{
+		D3D11_BUFFER_DESC desc;
+		ZeroMemory(&desc, sizeof(desc));
+
+		// cpu와 gpu가 얘를 가지고 어떻게 작업을 할 지에 대한 처리.
+		desc.Usage = D3D11_USAGE_IMMUTABLE; // D3D11_USAGE_IMMUTABLE : GPU만 읽을 수 있는 데이터로 한다.
+		desc.BindFlags = D3D11_BIND_VERTEX_BUFFER; // 정점 버퍼를 만드는데 사용하겠다.
+		desc.ByteWidth = (uint32)sizeof(Vertex) * _vertices.size();
+
+		D3D11_SUBRESOURCE_DATA data;
+		ZeroMemory(&data, sizeof(data));
+		data.pSysMem = _vertices.data();
+
+		// 새로운 리소스를 만들어주는 것은 우리의 Command Center인 _device의 CreateBuffer함수 사용.
+		_device->CreateBuffer(&desc, &data, _vertexBuffer.GetAddressOf());
+	}
+}
+
+void Game::CreateInputLayout()
+{
+	D3D11_INPUT_ELEMENT_DESC layout[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+
+		// POSITION이 12바이트를 차지하고 있으므로, COLOR의 시작 Offset은 12이다.
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+
+	const int32 count = sizeof(layout) / sizeof(D3D11_INPUT_ELEMENT_DESC);
+	_device->CreateInputLayout(layout, count, _vsBlob->GetBufferPointer(), _vsBlob->GetBufferSize(), _inputLayout.GetAddressOf());
+}
+
+void Game::CreateVS()
+{
+	// hlsl파일을 blob이라는 형태로 바꿔준다.
+	LoadShaderFromFile(L"Default.hlsl", "VS", "vs_5_0", _vsBlob);
+
+	HRESULT hr = _device->CreateVertexShader(_vsBlob->GetBufferPointer(),
+		_vsBlob->GetBufferSize(), nullptr, _vertexShader.GetAddressOf());
+
+	CHECK(hr);
+}
+
+void Game::CreatePS()
+{
+	LoadShaderFromFile(L"Default.hlsl", "PS", "ps_5_0", _psBlob);
+
+	HRESULT hr = _device->CreatePixelShader(_psBlob->GetBufferPointer(),
+		_psBlob->GetBufferSize(), nullptr, _pixelShader.GetAddressOf());
+
+	CHECK(hr);
+}
+
+void Game::LoadShaderFromFile(const wstring& path, const string& name, const string& version, ComPtr<ID3DBlob>& blob)
+{
+	const uint32 compileFlag = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+
+	::D3DCompileFromFile(
+		path.c_str(),
+		nullptr,
+		D3D_COMPILE_STANDARD_FILE_INCLUDE,
+		name.c_str(),
+		version.c_str(),
+		compileFlag,
+		0,
+		blob.GetAddressOf(),
+		nullptr
+	);
+}
+
