@@ -50,6 +50,8 @@ void Game::Render()
 
 		// IA
 		_deviceContext->IASetVertexBuffers(0, 1, _vertexBuffer.GetAddressOf(), &stride, &offset);
+		// 인덱스 버퍼도 렌더링 파이프 라인에 묶이게 됨.
+		_deviceContext->IASetIndexBuffer(_indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0); 
 		_deviceContext->IASetInputLayout(_inputLayout.Get());
 		_deviceContext->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -63,7 +65,8 @@ void Game::Render()
 
 		// OM
 
-		_deviceContext->Draw(_vertices.size(), 0);
+		//_deviceContext->Draw(_vertices.size(), 0);
+		_deviceContext->DrawIndexed(_indices.size(), 0, 0);
 	}
 
 	RenderEnd();
@@ -155,21 +158,26 @@ void Game::CreateGeometry()
 {
 	// VertexData
 	// 동적 배열을 사용함으로 기본적으로 CPU의 RAM을 사용하게 된다.
+	// 1 3 
+	// 0 2
 	{
-		_vertices.resize(3);
+		_vertices.resize(4);
 
 		_vertices[0].position = Vec3(-0.5f, -0.5f, 0.f);
 		_vertices[0].color = Color(1.f, 0.f, 0.f, 1.f);
 
-		_vertices[1].position = Vec3(0, 0.5f, 0);
-		_vertices[1].color = Color(0.f, 1.f, 0.f, 1.f);
+		_vertices[1].position = Vec3(-0.5f, 0.5f, 0);
+		_vertices[1].color = Color(1.f, 0.f, 0.f, 1.f);
 
 		_vertices[2].position = Vec3(0.5f, -0.5f, 0);
-		_vertices[2].color = Color(0.f, 0.f, 1.f, 1.f);
+		_vertices[2].color = Color(1.f, 0.f, 0.f, 1.f);
+
+		_vertices[3].position = Vec3(0.5f, 0.5f, 0);
+		_vertices[3].color = Color(1.f, 0.f, 0.f, 1.f);
 	}
 	
-	// GPU의 VRAM을 사용하기 위해서 위에서 만든 버텍스 버퍼를 GPU에게 건네주는 처리.
 	// VertexBuffer
+	// GPU의 VRAM을 사용하기 위해서 위에서 만든 버텍스 버퍼를 GPU에게 건네주는 처리.
 	{
 		D3D11_BUFFER_DESC desc;
 		ZeroMemory(&desc, sizeof(desc));
@@ -184,7 +192,32 @@ void Game::CreateGeometry()
 		data.pSysMem = _vertices.data();
 
 		// 새로운 리소스를 만들어주는 것은 우리의 Command Center인 _device의 CreateBuffer함수 사용.
-		_device->CreateBuffer(&desc, &data, _vertexBuffer.GetAddressOf());
+		HRESULT hr = _device->CreateBuffer(&desc, &data, _vertexBuffer.GetAddressOf());
+		CHECK(hr);
+	}
+
+	// Index
+	// 0, 1, 2 와 2, 1, 3 삼각형.
+	{
+		_indices = { 0, 1, 2, 2, 1, 3 };
+	}
+
+	// IndexBuffer
+	{
+		D3D11_BUFFER_DESC desc;
+		ZeroMemory(&desc, sizeof(desc));
+
+		desc.Usage = D3D11_USAGE_IMMUTABLE;
+		desc.BindFlags = D3D11_BIND_INDEX_BUFFER; // 인덱스 버퍼용으로 사용.
+		desc.ByteWidth = (uint32)sizeof(uint32) * _indices.size();
+
+		D3D11_SUBRESOURCE_DATA data;
+		ZeroMemory(&data, sizeof(data));
+		data.pSysMem = _indices.data();
+
+		// 새로운 리소스를 만들어주는 것은 우리의 Command Center인 _device의 CreateBuffer함수 사용.
+		HRESULT hr = _device->CreateBuffer(&desc, &data, _indexBuffer.GetAddressOf());
+		CHECK(hr);
 	}
 }
 

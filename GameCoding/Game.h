@@ -75,6 +75,10 @@ private:
 	// Geometry
 	vector<Vertex> _vertices;
 	ComPtr<ID3D11Buffer> _vertexBuffer = nullptr;
+
+	// 인덱스 버퍼를 위해서, 인덱스 목록들과 인덱스 버퍼 변수 생성.
+	vector<uint32> _indices;
+	ComPtr<ID3D11Buffer> _indexBuffer = nullptr;
 	ComPtr<ID3D11InputLayout> _inputLayout = nullptr;
 
 	// VS
