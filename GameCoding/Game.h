@@ -23,10 +23,12 @@ private:
 private:
 	// 어떻게 삼각형을 묘사할 지 데이터를 만들어주는 함수.
 	void CreateGeometry();
-	void CreateInputLayout();
+	void CreateInputLayout(); // 버텍스를 묘사하는 함수
 
 	void CreateVS();
 	void CreatePS();
+
+	void CreateSRV(); // Shader Resource View
 
 	void LoadShaderFromFile(const wstring& path, const string& name, const string& version, ComPtr<ID3DBlob>& blob);
 	
@@ -89,7 +91,9 @@ private:
 	ComPtr<ID3D11PixelShader> _pixelShader = nullptr;
 	ComPtr<ID3DBlob> _psBlob = nullptr;
 
-
+	// SRV
+	ComPtr<ID3D11ShaderResourceView> _shaderResourceView = nullptr;
+	ComPtr<ID3D11ShaderResourceView> _shaderResourceView2 = nullptr;
 	// [CPU <-> RAM] [GPU <-> VRAM]
 };
 
