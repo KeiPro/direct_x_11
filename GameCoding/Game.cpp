@@ -35,10 +35,20 @@ void Game::Init(HWND hwnd)
 	CreatePS();
 
 	CreateSRV();
+	CreateConstantBuffer();
 }
 
 void Game::Update()
 {
+	// Scale Rotation Translation
+	_transformData.offset.x = 0.3f;
+	_transformData.offset.y = 0.3f;
+	D3D11_MAPPED_SUBRESOURCE subResource;
+	ZeroMemory(&subResource, sizeof(subResource));
+
+	_deviceContext->Map(_constantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &subResource);
+	::memcpy(subResource.pData, &_transformData, sizeof(_transformData));
+	_deviceContext->Unmap(_constantBuffer.Get(), 0);
 }
 
 void Game::Render()
@@ -59,6 +69,7 @@ void Game::Render()
 
 		// VS
 		_deviceContext->VSSetShader(_vertexShader.Get(), nullptr, 0);
+		_deviceContext->VSSetConstantBuffers(0, 1, _constantBuffer.GetAddressOf());
 
 		// RS : 보간 단계
 
@@ -284,6 +295,19 @@ void Game::CreateSRV()
 	CHECK(hr);
 
 
+}
+
+void Game::CreateConstantBuffer()
+{
+	D3D11_BUFFER_DESC desc;
+	ZeroMemory(&desc, sizeof(desc));
+	desc.Usage = D3D11_USAGE_DYNAMIC; // CPU_Write + GPU_Read 방식.
+	desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER; // 상수 버퍼로 사용하겠다.
+	desc.ByteWidth = sizeof(TransformData);
+	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+	HRESULT hr = _device->CreateBuffer(&desc, nullptr, _constantBuffer.GetAddressOf());
+	CHECK(hr);
 }
 
 void Game::LoadShaderFromFile(const wstring& path, const string& name, const string& version, ComPtr<ID3DBlob>& blob)
