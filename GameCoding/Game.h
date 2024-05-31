@@ -24,10 +24,12 @@ private:
 	// 어떻게 삼각형을 묘사할 지 데이터를 만들어주는 함수.
 	void CreateGeometry();
 	void CreateInputLayout(); // 버텍스를 묘사하는 함수
-
 	void CreateVS();
 	void CreatePS();
 
+	void CreateRasterizerState();
+	void CreateSamplerState();
+	void CreateBlendState();
 	void CreateSRV(); // Shader Resource View
 
 	void CreateConstantBuffer();
@@ -88,6 +90,10 @@ private:
 	// VS
 	ComPtr<ID3D11VertexShader> _vertexShader = nullptr;
 	ComPtr<ID3DBlob> _vsBlob = nullptr;
+
+	// RS
+	ComPtr<ID3D11RasterizerState> _rasterizerState = nullptr;
+
 	
 	// PS
 	ComPtr<ID3D11PixelShader> _pixelShader = nullptr;
@@ -96,6 +102,10 @@ private:
 	// SRV
 	ComPtr<ID3D11ShaderResourceView> _shaderResourceView = nullptr;
 	ComPtr<ID3D11ShaderResourceView> _shaderResourceView2 = nullptr;
+
+	ComPtr<ID3D11SamplerState> _samplerState = nullptr;
+	ComPtr<ID3D11BlendState> _blendState = nullptr;
+
 	// [CPU <-> RAM] [GPU <-> VRAM]
 
 private:
